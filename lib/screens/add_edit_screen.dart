@@ -6,8 +6,7 @@ class AddEditScreen extends StatefulWidget {
   final GroceryListModel model;
   final GroceryItem? item;
 
-  const AddEditScreen({Key? key, required this.model, this.item})
-    : super(key: key);
+  const AddEditScreen({super.key, required this.model, this.item});
 
   @override
   State<AddEditScreen> createState() => _AddEditScreenState();
@@ -18,6 +17,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
   final _nameCtl = TextEditingController();
   final _qtyCtl = TextEditingController(text: '1');
   final _notesCtl = TextEditingController();
+  final _priceCtl = TextEditingController();
   String _category = 'Produce';
   bool _priority = false;
 
@@ -25,9 +25,13 @@ class _AddEditScreenState extends State<AddEditScreen> {
     'Produce',
     'Dairy',
     'Bakery',
+    'Seafood',
+    'Meat',
+    'Frozen',
     'Snacks',
     'Beverages',
     'Household',
+    'Condiments',
   ];
 
   @override
@@ -38,6 +42,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
       _nameCtl.text = it.name;
       _qtyCtl.text = it.quantity.toString();
       _notesCtl.text = it.notes ?? '';
+      _priceCtl.text = it.price?.toString() ?? '';
       _category = it.category;
       _priority = it.priority;
     }
@@ -48,6 +53,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
     _nameCtl.dispose();
     _qtyCtl.dispose();
     _notesCtl.dispose();
+    _priceCtl.dispose();
     super.dispose();
   }
 
@@ -55,6 +61,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
     if (!_formKey.currentState!.validate()) return;
     final name = _nameCtl.text.trim();
     final qty = int.tryParse(_qtyCtl.text) ?? 1;
+    final price = double.tryParse(_priceCtl.text) ?? 0.0;
 
     if (widget.item == null) {
       widget.model.createAndAdd(
@@ -63,6 +70,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
         category: _category,
         notes: _notesCtl.text.trim(),
         priority: _priority,
+        price: price,
       );
     } else {
       final updated = widget.item!.copyWith(
@@ -70,6 +78,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
         quantity: qty,
         category: _category,
         notes: _notesCtl.text.trim(),
+        price: price,
         priority: _priority,
       );
       widget.model.updateItem(widget.item!.id, updated);
@@ -94,6 +103,22 @@ class _AddEditScreenState extends State<AddEditScreen> {
                 decoration: const InputDecoration(labelText: 'Item name'),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Enter a name' : null,
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _priceCtl,
+                decoration: const InputDecoration(
+                  labelText: 'Estimated price (per unit, optional)',
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (v) {
+                  if (v == null || v.isEmpty) return null;
+                  final n = double.tryParse(v);
+                  if (n == null || n < 0) return 'Enter a valid price';
+                  return null;
+                },
               ),
               const SizedBox(height: 8),
               TextFormField(

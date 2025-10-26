@@ -1,16 +1,18 @@
 import 'dart:collection';
+import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'grocery_item.dart';
 
 class GroceryListModel extends ChangeNotifier {
   final List<GroceryItem> _items = [];
-
 
   UnmodifiableListView<GroceryItem> get items => UnmodifiableListView(_items);
 
   void addItem(GroceryItem item) {
     _items.add(item);
     notifyListeners();
+    _saveToPrefs();
   }
 
   GroceryItem createAndAdd({
@@ -19,6 +21,7 @@ class GroceryListModel extends ChangeNotifier {
     required String category,
     String? notes,
     bool priority = false,
+    double? price,
   }) {
     final item = GroceryItem(
       id: DateTime.now().microsecondsSinceEpoch.toString(),
@@ -26,6 +29,7 @@ class GroceryListModel extends ChangeNotifier {
       quantity: quantity,
       category: category,
       notes: notes,
+      price: price,
       priority: priority,
     );
     addItem(item);
@@ -37,12 +41,14 @@ class GroceryListModel extends ChangeNotifier {
     if (idx != -1) {
       _items[idx] = updated;
       notifyListeners();
+      _saveToPrefs();
     }
   }
 
   void removeItem(String id) {
     _items.removeWhere((e) => e.id == id);
     notifyListeners();
+    _saveToPrefs();
   }
 
   void togglePurchased(String id) {
@@ -51,6 +57,49 @@ class GroceryListModel extends ChangeNotifier {
       final it = _items[idx];
       _items[idx] = it.copyWith(purchased: !it.purchased);
       notifyListeners();
+      _saveToPrefs();
+    }
+  }
+
+  double totalEstimatedPrice({String? category}) {
+    final list = search(category: category);
+    double total = 0.0;
+    for (final it in list) {
+      final p = it.price ?? 0.0;
+      total += p * it.quantity;
+    }
+    return total;
+  }
+
+  static const _prefsKey = 'grocery_items_v1';
+
+  Future<void> _saveToPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonList = _items.map((e) => e.toJson()).toList();
+      await prefs.setString(_prefsKey, jsonEncode(jsonList));
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  Future<void> loadFromPrefs() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getString(_prefsKey);
+      if (s == null) return;
+      final List<dynamic> arr = jsonDecode(s) as List<dynamic>;
+      _items.clear();
+      for (final e in arr) {
+        if (e is Map<String, dynamic>) {
+          _items.add(GroceryItem.fromJson(e));
+        } else if (e is Map) {
+          _items.add(GroceryItem.fromJson(Map<String, dynamic>.from(e)));
+        }
+      }
+      notifyListeners();
+    } catch (_) {
+      // ignore
     }
   }
 
@@ -65,14 +114,16 @@ class GroceryListModel extends ChangeNotifier {
   List<GroceryItem> search({String? query, String? category}) {
     final q = query?.toLowerCase();
     return _items.where((it) {
-      if (category != null && category.isNotEmpty && it.category != category)
+      if (category != null && category.isNotEmpty && it.category != category) {
         return false;
-      if (q == null || q.isEmpty) return true;
+      }
+      if (q == null || q.isEmpty) {
+        return true;
+      }
       return it.name.toLowerCase().contains(q) ||
           (it.notes ?? '').toLowerCase().contains(q);
     }).toList();
   }
-
 
   Map<String, List<GroceryItem>> groupByCategory({
     String? query,

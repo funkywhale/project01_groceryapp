@@ -4,7 +4,7 @@ import '../models/grocery_list_model.dart';
 class CategoryScreen extends StatelessWidget {
   final GroceryListModel model;
 
-  const CategoryScreen({Key? key, required this.model}) : super(key: key);
+  const CategoryScreen({super.key, required this.model});
 
   @override
   Widget build(BuildContext context) {

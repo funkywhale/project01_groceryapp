@@ -6,7 +6,7 @@ import '../widgets/grocery_tile.dart';
 class MainTabs extends StatefulWidget {
   final GroceryListModel model;
 
-  const MainTabs({Key? key, required this.model}) : super(key: key);
+  const MainTabs({super.key, required this.model});
 
   @override
   State<MainTabs> createState() => _MainTabsState();
@@ -80,8 +80,7 @@ class HomeTab extends StatefulWidget {
   final GroceryListModel model;
   final String? selectedCategory;
 
-  const HomeTab({Key? key, required this.model, this.selectedCategory})
-    : super(key: key);
+  const HomeTab({super.key, required this.model, this.selectedCategory});
 
   @override
   State<HomeTab> createState() => _HomeTabState();
@@ -111,6 +110,14 @@ class _HomeTabState extends State<HomeTab> {
       query: _search,
       category: _filterCategory,
     );
+    final visible = widget.model.search(
+      query: _search,
+      category: _filterCategory,
+    );
+    final total = visible.fold<double>(
+      0.0,
+      (acc, it) => acc + ((it.price ?? 0.0) * it.quantity),
+    );
 
     return Padding(
       padding: const EdgeInsets.all(8.0),
@@ -124,6 +131,20 @@ class _HomeTabState extends State<HomeTab> {
               isDense: true,
             ),
             onChanged: (v) => setState(() => _search = v),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Estimated total',
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+              Text(
+                '\$${total.toStringAsFixed(2)}',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Expanded(
@@ -183,8 +204,7 @@ class CategoryTab extends StatelessWidget {
   final GroceryListModel model;
   final void Function(String?) onSelected;
 
-  const CategoryTab({Key? key, required this.model, required this.onSelected})
-    : super(key: key);
+  const CategoryTab({super.key, required this.model, required this.onSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +232,7 @@ class CategoryTab extends StatelessWidget {
 }
 
 class SettingsTab extends StatelessWidget {
-  const SettingsTab({Key? key}) : super(key: key);
+  const SettingsTab({super.key});
 
   @override
   Widget build(BuildContext context) {

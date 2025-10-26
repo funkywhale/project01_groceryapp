@@ -7,7 +7,7 @@ import 'category_screen.dart';
 class HomeScreen extends StatefulWidget {
   final GroceryListModel model;
 
-  const HomeScreen({Key? key, required this.model}) : super(key: key);
+  const HomeScreen({super.key, required this.model});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -27,8 +27,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final selected = await Navigator.of(context).push<String?>(
       MaterialPageRoute(builder: (_) => CategoryScreen(model: widget.model)),
     );
-    if (selected != null)
-      setState(() => _filterCategory = selected.isEmpty ? null : selected);
+    if (selected != null) {
+      setState(() {
+        _filterCategory = selected.isEmpty ? null : selected;
+      });
+    }
   }
 
   @override

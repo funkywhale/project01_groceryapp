@@ -8,12 +8,12 @@ class GroceryTile extends StatelessWidget {
   final VoidCallback onTogglePurchased;
 
   const GroceryTile({
-    Key? key,
+    super.key,
     required this.item,
     required this.onEdit,
     required this.onDelete,
     required this.onTogglePurchased,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,16 +33,30 @@ class GroceryTile extends StatelessWidget {
       subtitle: Text(
         '${item.quantity} • ${item.category}${item.notes != null && item.notes!.isNotEmpty ? ' • ${item.notes}' : ''}',
       ),
-      trailing: Wrap(
-        spacing: 8,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          if (item.priority)
-            const Chip(
-              label: Text('Need Today'),
-              backgroundColor: Colors.orangeAccent,
+          if (item.price != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8.0),
+              child: Text(
+                '\$${item.price!.toStringAsFixed(2)}',
+                style: textStyle.copyWith(fontWeight: FontWeight.w600),
+              ),
             ),
-          IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
-          IconButton(icon: const Icon(Icons.delete), onPressed: onDelete),
+          Wrap(
+            spacing: 8,
+            children: [
+              if (item.priority)
+                const Chip(
+                  label: Text('Need Today'),
+                  backgroundColor: Colors.orangeAccent,
+                ),
+              IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
+              IconButton(icon: const Icon(Icons.delete), onPressed: onDelete),
+            ],
+          ),
         ],
       ),
       onTap: onEdit,

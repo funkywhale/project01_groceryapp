@@ -4,6 +4,7 @@ class GroceryItem {
   final int quantity;
   final String category;
   final String? notes;
+  final double? price;
   final bool priority;
   final bool purchased;
   final DateTime createdAt;
@@ -14,6 +15,7 @@ class GroceryItem {
     required this.quantity,
     required this.category,
     this.notes,
+    this.price,
     this.priority = false,
     this.purchased = false,
     DateTime? createdAt,
@@ -25,6 +27,7 @@ class GroceryItem {
     int? quantity,
     String? category,
     String? notes,
+    double? price,
     bool? priority,
     bool? purchased,
     DateTime? createdAt,
@@ -35,6 +38,7 @@ class GroceryItem {
       quantity: quantity ?? this.quantity,
       category: category ?? this.category,
       notes: notes ?? this.notes,
+      price: price ?? this.price,
       priority: priority ?? this.priority,
       purchased: purchased ?? this.purchased,
       createdAt: createdAt ?? this.createdAt,
@@ -47,6 +51,7 @@ class GroceryItem {
     'quantity': quantity,
     'category': category,
     'notes': notes,
+    'price': price,
     'priority': priority,
     'purchased': purchased,
     'createdAt': createdAt.toIso8601String(),
@@ -58,6 +63,9 @@ class GroceryItem {
     quantity: j['quantity'] as int,
     category: j['category'] as String,
     notes: j['notes'] as String?,
+    price: (j['price'] is num)
+        ? (j['price'] as num).toDouble()
+        : (j['price'] == null ? null : double.tryParse(j['price'].toString())),
     priority: j['priority'] as bool? ?? false,
     purchased: j['purchased'] as bool? ?? false,
     createdAt: DateTime.parse(j['createdAt'] as String),

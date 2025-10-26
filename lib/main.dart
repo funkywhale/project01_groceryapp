@@ -5,7 +5,7 @@ import 'screens/main_tabs.dart';
 void main() => runApp(const MyApp());
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -18,6 +18,7 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     model.addListener(() => setState(() {}));
+    model.loadFromPrefs();
   }
 
   @override
