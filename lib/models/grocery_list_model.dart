@@ -61,6 +61,12 @@ class GroceryListModel extends ChangeNotifier {
     }
   }
 
+  void clearPurchased() {
+    _items.removeWhere((e) => e.purchased);
+    notifyListeners();
+    _saveToPrefs();
+  }
+
   double totalEstimatedPrice({String? category}) {
     final list = search(category: category);
     double total = 0.0;

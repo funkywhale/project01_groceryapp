@@ -15,12 +15,16 @@ class MainTabs extends StatefulWidget {
 class _MainTabsState extends State<MainTabs>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  final GlobalKey<_HomeTabState> _homeKey = GlobalKey<_HomeTabState>();
   String? _selectedCategory;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      setState(() {});
+    });
   }
 
   @override
@@ -34,6 +38,35 @@ class _MainTabsState extends State<MainTabs>
       MaterialPageRoute(builder: (_) => AddEditScreen(model: widget.model)),
     );
     setState(() {});
+  }
+
+  Future<void> _confirmClearPurchased() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear purchased items?'),
+        content: const Text(
+          'This will permanently remove all checked (purchased) items.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(
+              'Clear',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      _homeKey.currentState?.clearPurchased();
+    }
   }
 
   void _onCategorySelected(String? category) {
@@ -58,20 +91,79 @@ class _MainTabsState extends State<MainTabs>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
+      body: Stack(
         children: [
-          HomeTab(model: widget.model, selectedCategory: _selectedCategory),
-          CategoryTab(model: widget.model, onSelected: _onCategorySelected),
-          const SettingsTab(),
+          TabBarView(
+            controller: _tabController,
+            children: [
+              HomeTab(
+                key: _homeKey,
+                model: widget.model,
+                selectedCategory: _selectedCategory,
+              ),
+              CategoryTab(model: widget.model, onSelected: _onCategorySelected),
+              const SettingsTab(),
+            ],
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: AnimatedBuilder(
+                  animation: widget.model,
+                  builder: (context, _) {
+                    final onHome = _tabController.index == 0;
+                    final hasPurchased = widget.model.items.any(
+                      (e) => e.purchased,
+                    );
+                    final show = onHome && hasPurchased;
+                    return AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 200),
+                      transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: ScaleTransition(
+                          scale: Tween<double>(
+                            begin: 0.95,
+                            end: 1.0,
+                          ).animate(anim),
+                          child: child,
+                        ),
+                      ),
+                      child: show
+                          ? FloatingActionButton(
+                              key: const ValueKey('clearFab'),
+                              onPressed: _confirmClearPurchased,
+                              backgroundColor: Colors.redAccent,
+                              tooltip: 'Clear purchased',
+                              child: const Icon(Icons.delete_sweep),
+                            )
+                          : const SizedBox.shrink(key: ValueKey('noClearFab')),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
         ],
       ),
-      floatingActionButton: _tabController.index == 0
-          ? FloatingActionButton(
-              onPressed: _openAdd,
-              child: const Icon(Icons.add),
-            )
-          : null,
+      floatingActionButton: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 200),
+        transitionBuilder: (child, anim) => FadeTransition(
+          opacity: anim,
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.95, end: 1.0).animate(anim),
+            child: child,
+          ),
+        ),
+        child: _tabController.index == 0
+            ? FloatingActionButton(
+                key: const ValueKey('addFab'),
+                onPressed: _openAdd,
+                child: const Icon(Icons.add),
+              )
+            : const SizedBox.shrink(key: ValueKey('noAddFab')),
+      ),
     );
   }
 }
@@ -197,6 +289,11 @@ class _HomeTabState extends State<HomeTab> {
         ],
       ),
     );
+  }
+
+  void clearPurchased() {
+    widget.model.clearPurchased();
+    setState(() {});
   }
 }
 
