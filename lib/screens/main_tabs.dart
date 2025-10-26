@@ -124,6 +124,7 @@ class _MainTabsState extends State<MainTabs>
               ),
               CategoryTab(model: widget.model, onSelected: _onCategorySelected),
               SettingsTab(
+                model: widget.model,
                 themeMode: widget.themeMode,
                 onThemeModeChanged: widget.onThemeModeChanged,
               ),
@@ -352,19 +353,192 @@ class CategoryTab extends StatelessWidget {
   }
 }
 
-class SettingsTab extends StatelessWidget {
+class SettingsTab extends StatefulWidget {
+  final GroceryListModel model;
   final ThemeMode themeMode;
   final ValueChanged<ThemeMode> onThemeModeChanged;
 
   const SettingsTab({
     super.key,
+    required this.model,
     required this.themeMode,
     required this.onThemeModeChanged,
   });
 
   @override
+  State<SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<SettingsTab> {
+  List<String> _savedNames = [];
+  bool _loading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSavedNames();
+  }
+
+  Future<void> _loadSavedNames() async {
+    setState(() => _loading = true);
+    final names = await widget.model.savedListNames();
+    setState(() {
+      _savedNames = names;
+      _loading = false;
+    });
+  }
+
+  Future<void> _onSaveTapped() async {
+    if (widget.model.items.isEmpty) return;
+    final name = await _promptForName();
+    if (name == null || name.isEmpty) return;
+
+    if (_savedNames.contains(name)) {
+      if (!mounted) return;
+      final over = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Overwrite saved list?'),
+          content: Text(
+            'A saved list named "$name" already exists. Overwrite?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(true),
+              child: const Text('Overwrite'),
+            ),
+          ],
+        ),
+      );
+      if (over != true) return;
+    }
+
+    await widget.model.saveNamedList(name, clearAfterSave: true);
+    if (!mounted) return;
+    await _loadSavedNames();
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('List saved and cleared')));
+  }
+
+  Future<void> _onLoadTapped() async {
+    if (_savedNames.isEmpty) return;
+
+    if (widget.model.items.isNotEmpty) {
+      if (!mounted) return;
+      final choice = await showDialog<String?>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Save current list?'),
+          content: const Text(
+            'Do you want to save your current list before loading another saved list?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop('no'),
+              child: const Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop('yes'),
+              child: const Text('Yes'),
+            ),
+          ],
+        ),
+      );
+      if (choice == null) return;
+      if (choice == 'yes') {
+        final name = await _promptForName();
+        if (name == null || name.isEmpty) return;
+        await widget.model.saveNamedList(name, clearAfterSave: true);
+        if (!mounted) return;
+        await _loadSavedNames();
+        if (!mounted) return;
+      }
+    }
+
+    if (!mounted) return;
+    final selected = await showDialog<String?>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Load saved list'),
+        children: _savedNames.isEmpty
+            ? [
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text('No saved lists'),
+                ),
+              ]
+            : _savedNames
+                  .map(
+                    (n) => SimpleDialogOption(
+                      onPressed: () => Navigator.of(ctx).pop(n),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(n),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () async {
+                              await widget.model.removeSavedList(n);
+                              await _loadSavedNames();
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                  .toList(),
+      ),
+    );
+
+    if (selected == null) return;
+    await widget.model.loadNamedList(selected);
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Saved list loaded')));
+    setState(() {});
+  }
+
+  Future<String?> _promptForName() async {
+    final ctl = TextEditingController();
+    final res = await showDialog<String?>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Save current list'),
+        content: TextField(
+          controller: ctl,
+          decoration: const InputDecoration(labelText: 'List name'),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(ctl.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return null;
+    return res;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final isDark = themeMode == ThemeMode.dark;
+    final isDark = widget.themeMode == ThemeMode.dark;
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -374,7 +548,27 @@ class SettingsTab extends StatelessWidget {
           title: const Text('Dark mode'),
           value: isDark,
           onChanged: (v) =>
-              onThemeModeChanged(v ? ThemeMode.dark : ThemeMode.light),
+              widget.onThemeModeChanged(v ? ThemeMode.dark : ThemeMode.light),
+        ),
+        const Divider(),
+        Text('Lists', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        ListTile(
+          title: const Text('Save current list'),
+          subtitle: const Text('Save the current grocery list to load later'),
+          enabled: widget.model.items.isNotEmpty,
+          onTap: _onSaveTapped,
+          leading: const Icon(Icons.save),
+        ),
+        const SizedBox(height: 8),
+        ListTile(
+          title: const Text('Load saved list'),
+          subtitle: _loading
+              ? const Text('Loading...')
+              : Text('${_savedNames.length} saved lists'),
+          enabled: _savedNames.isNotEmpty,
+          onTap: _onLoadTapped,
+          leading: const Icon(Icons.folder_open),
         ),
       ],
     );

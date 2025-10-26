@@ -78,6 +78,7 @@ class GroceryListModel extends ChangeNotifier {
   }
 
   static const _prefsKey = 'grocery_items_v1';
+  static const _savedListsKey = 'saved_grocery_lists_v1';
 
   Future<void> _saveToPrefs() async {
     try {
@@ -107,6 +108,88 @@ class GroceryListModel extends ChangeNotifier {
     } catch (_) {
       // ignore
     }
+  }
+
+  Future<void> saveNamedList(String name, {bool clearAfterSave = false}) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getString(_savedListsKey);
+      Map<String, dynamic> map = {};
+      if (s != null) {
+        final decoded = jsonDecode(s);
+        if (decoded is Map<String, dynamic>) map = decoded;
+      }
+      map[name] = _items.map((e) => e.toJson()).toList();
+      await prefs.setString(_savedListsKey, jsonEncode(map));
+      if (clearAfterSave) {
+        _items.clear();
+        notifyListeners();
+        await _saveToPrefs();
+      }
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  Future<List<String>> savedListNames() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getString(_savedListsKey);
+      if (s == null) return [];
+      final decoded = jsonDecode(s);
+      if (decoded is Map<String, dynamic>) {
+        final keys = decoded.keys.toList();
+        keys.sort();
+        return keys;
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  Future<List<GroceryItem>> _itemsForSavedList(String name) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getString(_savedListsKey);
+      if (s == null) return [];
+      final decoded = jsonDecode(s);
+      if (decoded is Map<String, dynamic>) {
+        final entry = decoded[name];
+        if (entry is List) {
+          final out = <GroceryItem>[];
+          for (final e in entry) {
+            if (e is Map<String, dynamic>) {
+              out.add(GroceryItem.fromJson(e));
+            } else if (e is Map) {
+              out.add(GroceryItem.fromJson(Map<String, dynamic>.from(e)));
+            }
+          }
+          return out;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+
+  Future<void> loadNamedList(String name) async {
+    final items = await _itemsForSavedList(name);
+    _items.clear();
+    _items.addAll(items);
+    notifyListeners();
+    await _saveToPrefs();
+  }
+
+  Future<void> removeSavedList(String name) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final s = prefs.getString(_savedListsKey);
+      if (s == null) return;
+      final decoded = jsonDecode(s);
+      if (decoded is Map<String, dynamic>) {
+        decoded.remove(name);
+        await prefs.setString(_savedListsKey, jsonEncode(decoded));
+      }
+    } catch (_) {}
   }
 
   Map<String, int> categoryCounts() {

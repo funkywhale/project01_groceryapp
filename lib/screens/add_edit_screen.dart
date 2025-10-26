@@ -212,7 +212,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
                           decoration: const InputDecoration(
                             labelText: 'Dollars',
                           ),
-                          items: List<int>.generate(99, (i) => i + 1)
+                          items: List<int>.generate(99, (i) => i)
                               .map(
                                 (d) => DropdownMenuItem<int>(
                                   value: d,
@@ -223,7 +223,7 @@ class _AddEditScreenState extends State<AddEditScreen> {
                           onChanged: (v) =>
                               setState(() => _selectedDollars = v),
                           validator: (v) =>
-                              (_includePrice && (v == null || v < 1 || v > 99))
+                              (_includePrice && (v == null || v < 0 || v > 99))
                               ? 'Select dollars'
                               : null,
                         ),
