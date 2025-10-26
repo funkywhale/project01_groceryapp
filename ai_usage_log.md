@@ -1,10 +1,13 @@
-# AI Usage Log
+# AI Usage Log (GPT-5)
 
-  Prompt: "How should I structure this app's file structure?"
+  Prompt: "I am choosing the Smart Grocery List as my project. The app will be designed to help users
+manage grocery shopping with a simple clean UI. You’ll be able to search for items by
+category, create grocery lists, and set reminders for specific items you need. Some other
+helpful features like estimating prices will also be included. How should I structure this app's file structure?"
 
   Assistant:
 
-  Suggested folder layout and purpose (keep it small and pragmatic for Milestone 1):
+  Suggested folder layout and purpose (keep it small and pragmatic):
 
   - `lib/main.dart` — app entry and top-level wiring (create the app state and pass it into the Home screen)
   - `lib/models/` — data classes and domain logic
@@ -27,6 +30,8 @@
   - For larger apps, introduce `providers/` or use `state/` naming and add dependency injection (Provider, Riverpod, etc.).
 
   ---
+
+  ````
 
   Prompt: "Instruct me on how to create a model for grocery items."
 
@@ -418,3 +423,43 @@
 
   ---
 
+  Prompt: "Instruct me on how I would add a tabs list to navigate between screens"
+
+  Assistant:
+
+  Summary: add a top `TabBar` (inside the `AppBar`) and a `TabBarView` with three tabs: Home, Categories, Settings. Use a `TabController` to coordinate them. Have `CategoryTab` call a callback when a category is selected; the parent (`MainTabs`) sets the selected category and switches to the Home tab. Show the FAB only on the Home tab.
+
+  Key steps and concise code:
+
+  1) Create `MainTabs` (Stateful):
+
+  ```dart
+  class MainTabs extends StatefulWidget {
+    final GroceryListModel model;
+    const MainTabs({Key? key, required this.model}) : super(key: key);
+    @override State<MainTabs> createState() => _MainTabsState();
+  }
+
+  class _MainTabsState extends State<MainTabs> with SingleTickerProviderStateMixin {
+    late TabController _tabController;
+    String? _selectedCategory;
+    @override void initState() { super.initState(); _tabController = TabController(length: 3, vsync: this); _tabController.addListener(() => setState(() {})); }
+    void _onCategorySelected(String? category) { setState(() { _selectedCategory = (category?.isEmpty ?? true) ? null : category; _tabController.index = 0; }); }
+    @override Widget build(BuildContext c) => Scaffold(
+      appBar: AppBar(title: const Text('Smart Grocery List'), bottom: TabBar(controller: _tabController, tabs: const [Tab(text:'Home'), Tab(text:'Categories'), Tab(text:'Settings')]),),
+      body: TabBarView(controller: _tabController, children: [HomeTab(model: widget.model, selectedCategory: _selectedCategory), CategoryTab(model: widget.model, onSelected: _onCategorySelected), SettingsTab(),]),
+      floatingActionButton: _tabController.index==0 ? FloatingActionButton(onPressed: (){}, child: const Icon(Icons.add)) : null,
+    );
+  }
+  ```
+
+  2) Implement `HomeTab` to accept `selectedCategory` and apply it to its filtering logic. Implement `CategoryTab` to show categories and call `onSelected(category)` when picked. Implement a simple `SettingsTab` placeholder for now.
+
+  3) Update `main.dart` to use `MainTabs(model: model)` as the app `home`.
+
+  Testing checklist:
+  - Selecting a category should switch to the Home tab and display only items from that category.
+  - FAB should only appear on the Home tab and open the Add screen.
+  - Navigation between tabs should be smooth and preserve model state.
+  
+  ---

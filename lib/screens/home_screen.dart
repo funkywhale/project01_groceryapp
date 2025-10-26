@@ -40,7 +40,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Smart Grocery List'),
         actions: [
           IconButton(
             onPressed: _openCategory,
@@ -64,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
       body: grouped.isEmpty
-          ? const Center(child: Text('No items yet — tap + to add one'))
+          ? const Center(child: Text('Tap + to add items to list'))
           : ListView.builder(
               itemCount: grouped.keys.length,
               itemBuilder: (context, idx) {

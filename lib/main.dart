@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'models/grocery_list_model.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_tabs.dart';
 
 void main() => runApp(const MyApp());
 
@@ -29,9 +29,8 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Smart Grocery List',
       theme: ThemeData(primarySwatch: Colors.green),
-      home: HomeScreen(model: model),
+      home: MainTabs(model: model),
     );
   }
 }
