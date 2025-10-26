@@ -100,7 +100,6 @@ class _MainTabsState extends State<MainTabs>
       ),
       body: Stack(
         children: [
-          // Background gradient depending on light/dark theme
           Positioned.fill(
             child: DecoratedBox(
               decoration: BoxDecoration(

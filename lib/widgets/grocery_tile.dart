@@ -47,11 +47,16 @@ class GroceryTile extends StatelessWidget {
             ),
           Wrap(
             spacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               if (item.priority)
-                const Chip(
-                  label: Text('Need Today'),
-                  backgroundColor: Colors.orangeAccent,
+                const Tooltip(
+                  message: 'Priority',
+                  child: Icon(
+                    Icons.priority_high,
+                    color: Colors.orangeAccent,
+                    size: 20,
+                  ),
                 ),
               IconButton(icon: const Icon(Icons.edit), onPressed: onEdit),
               IconButton(icon: const Icon(Icons.delete), onPressed: onDelete),
