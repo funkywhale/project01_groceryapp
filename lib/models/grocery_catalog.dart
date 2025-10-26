@@ -216,6 +216,7 @@ class GroceryCatalog {
   }
 
   static const List<int> quantityOptions = <int>[
+    0,
     1,
     2,
     3,

@@ -31,7 +31,7 @@ class GroceryTile extends StatelessWidget {
       ),
       title: Text(item.name, style: textStyle),
       subtitle: Text(
-        '${item.quantity} • ${item.category}${item.notes != null && item.notes!.isNotEmpty ? ' • ${item.notes}' : ''}',
+        'Qty: ${item.quantity}            ${item.notes != null && item.notes!.isNotEmpty ? ' • ${item.notes}' : ''}',
       ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,

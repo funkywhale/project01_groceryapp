@@ -5,8 +5,15 @@ import '../widgets/grocery_tile.dart';
 
 class MainTabs extends StatefulWidget {
   final GroceryListModel model;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
-  const MainTabs({super.key, required this.model});
+  const MainTabs({
+    super.key,
+    required this.model,
+    required this.themeMode,
+    required this.onThemeModeChanged,
+  });
 
   @override
   State<MainTabs> createState() => _MainTabsState();
@@ -93,6 +100,20 @@ class _MainTabsState extends State<MainTabs>
       ),
       body: Stack(
         children: [
+          // Background gradient depending on light/dark theme
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: Theme.of(context).brightness == Brightness.light
+                      ? const [Color(0xFFF5EDE3), Color(0xFFEDE3D6)]
+                      : const [Color(0xFF0E1113), Color(0xFF15191C)],
+                ),
+              ),
+            ),
+          ),
           TabBarView(
             controller: _tabController,
             children: [
@@ -102,7 +123,10 @@ class _MainTabsState extends State<MainTabs>
                 selectedCategory: _selectedCategory,
               ),
               CategoryTab(model: widget.model, onSelected: _onCategorySelected),
-              const SettingsTab(),
+              SettingsTab(
+                themeMode: widget.themeMode,
+                onThemeModeChanged: widget.onThemeModeChanged,
+              ),
             ],
           ),
           SafeArea(
@@ -329,10 +353,30 @@ class CategoryTab extends StatelessWidget {
 }
 
 class SettingsTab extends StatelessWidget {
-  const SettingsTab({super.key});
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
+
+  const SettingsTab({
+    super.key,
+    required this.themeMode,
+    required this.onThemeModeChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: Text('Settings placeholder'));
+    final isDark = themeMode == ThemeMode.dark;
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text('Appearance', style: Theme.of(context).textTheme.titleLarge),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          title: const Text('Dark mode'),
+          value: isDark,
+          onChanged: (v) =>
+              onThemeModeChanged(v ? ThemeMode.dark : ThemeMode.light),
+        ),
+      ],
+    );
   }
 }
